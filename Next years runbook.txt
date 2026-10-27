@@ -1,0 +1,7 @@
+Next year's runbook:
+
+Drop in sunshine2026.csv
+python geocode_employers.py --input sunshine2026.csv --output employer_coords.json --resume — only new orgs get geocoded
+python build_map_data.py --input sunshine2026.csv --coords employer_coords.json --output sunshine_map.json
+python build_search_index.py --input sunshine2026.csv --coords employer_coords.json --output search_index.json
+vercel --prod

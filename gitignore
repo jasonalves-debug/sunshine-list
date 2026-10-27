@@ -1,0 +1,12 @@
+# Raw source data (large, and anyone can download it from Ontario's site)
+sunshine*.csv
+search_index.json
+person_badges.json
+
+# Old Vercel setup
+.vercel/
+api/
+vercel.json
+.env.local
+
+__pycache__/

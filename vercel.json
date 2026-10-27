@@ -1,0 +1,14 @@
+{
+  "version": 2,
+  "builds": [
+    { "src": "api/search.js", "use": "@vercel/node" },
+    { "src": "*.html", "use": "@vercel/static" },
+    { "src": "*.json", "use": "@vercel/static" }
+  ],
+  "routes": [
+    { "src": "/search", "dest": "/api/search.js" },
+    { "src": "/", "dest": "/sunshine_map.html" },
+    { "src": "/(.*\\.html)", "dest": "/$1" },
+    { "src": "/(.*\\.json)", "dest": "/$1" }
+  ]
+}

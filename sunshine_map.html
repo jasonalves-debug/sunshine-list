@@ -1,0 +1,958 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Ontario Sunshine List 2025</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&display=swap" rel="stylesheet">
+<link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet">
+<script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
+<style>
+:root {
+  --ink:#000;--ink-soft:#1a1a1a;--ink-muted:#555;
+  --paper:#f7f6f2;--panel:#fff;--border:#e4e2da;
+  --accent:#c0392b;--accent-lt:#fdf0ee;
+  --header-h:60px;--sidebar-w:300px;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;font-family:'Segoe UI',system-ui,sans-serif;background:var(--paper);color:var(--ink);overflow:hidden}
+
+/* Header */
+header{position:fixed;top:0;left:0;right:0;height:var(--header-h);background:var(--panel);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 16px;z-index:200;gap:12px}
+.header-left{display:flex;flex-direction:column;justify-content:center;min-width:0}
+.logo{font-family:'DM Serif Display',serif;font-size:17px;letter-spacing:-0.3px;white-space:nowrap;color:#000}
+.logo em{color:var(--accent);font-style:normal}
+.tagline{font-size:10px;color:var(--ink-muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tagline a{color:var(--accent);text-decoration:none}
+.header-stats{display:flex;gap:20px;flex-shrink:0}
+.hstat{text-align:right}
+.hstat-value{font-size:13px;font-weight:700;color:#000}
+.hstat-label{font-size:9px;color:var(--ink-muted);text-transform:uppercase;letter-spacing:.5px}
+
+/* Layout */
+.layout{position:fixed;top:var(--header-h);left:0;right:0;bottom:0;display:flex}
+
+/* Sidebar */
+.sidebar{width:var(--sidebar-w);flex-shrink:0;background:var(--panel);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;z-index:100}
+.sidebar-scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.sidebar-scroll::-webkit-scrollbar{width:3px}
+.sidebar-scroll::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+.sb-section{padding:12px 14px;border-bottom:1px solid var(--border)}
+.sb-label{font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--ink-muted);margin-bottom:8px}
+
+.legend-bar{height:9px;border-radius:5px;margin-bottom:5px;background:linear-gradient(to right,#93c5fd,#60a5fa,#f59e0b,#f97316,#dc2626);transition:background .4s}
+.legend-labels{display:flex;justify-content:space-between;font-size:10px;color:var(--ink-muted)}
+
+select,.search-input{width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:6px;font-family:inherit;font-size:13px;color:#000;background:var(--paper)}
+select{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'%3E%3Cpath fill='%23555' d='M5 7L0 2h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center}
+.search-input:focus{outline:none;border-color:var(--accent)}
+
+/* Person results */
+.person-results-wrap{margin-top:8px;display:none}
+.person-results-list{max-height:200px;overflow-y:auto;border:1px solid var(--border);border-radius:6px;background:var(--panel)}
+.person-results-list::-webkit-scrollbar{width:3px}
+.person-results-list::-webkit-scrollbar-thumb{background:var(--border)}
+.person-hit{padding:7px 10px;border-bottom:1px solid #f0eeea;cursor:pointer;transition:background .1s}
+.person-hit:last-child{border-bottom:none}
+.person-hit:hover{background:#faf9f6}
+.person-hit.active{background:var(--accent-lt);border-left:2px solid var(--accent);padding-left:8px}
+.ph-name{font-size:12px;font-weight:600;color:#000}
+.ph-meta{font-size:11px;color:var(--ink-muted);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ph-salary{font-size:11px;font-weight:700;color:var(--accent)}
+.person-count{font-size:10px;color:var(--ink-muted);margin-top:4px;text-align:right}
+
+/* Follow The Money */
+.audit-dropdown{border-bottom:1px solid var(--border)}
+.audit-dropdown-toggle{width:100%;padding:12px 14px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;background:var(--panel);border:none;font-family:inherit;text-align:left;transition:background .1s}
+.audit-dropdown-toggle:hover{background:#faf9f6}
+.audit-dropdown-toggle.open{background:var(--accent-lt)}
+.adt-left{display:flex;align-items:center;gap:8px}
+.adt-label{font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--accent)}
+.adt-active{font-size:11px;font-weight:600;color:var(--accent)}
+.adt-arrow{font-size:10px;color:var(--ink-muted);transition:transform .2s}
+.audit-dropdown-toggle.open .adt-arrow{transform:rotate(180deg)}
+.audit-body{display:none;padding:8px 12px 12px;background:#fdfcfa;border-top:1px solid var(--border)}
+.audit-body.open{display:block}
+.audit-callout{background:#fff8f7;border:1px solid #f0c0bb;border-radius:8px;padding:10px 12px;margin-bottom:10px;font-size:12px;color:#1a1a1a;line-height:1.5;display:none}
+.audit-callout.show{display:block}
+.audit-callout strong{color:var(--accent)}
+.audit-reset{width:100%;padding:7px;margin-bottom:8px;border:1px solid var(--border);border-radius:6px;background:transparent;cursor:pointer;font-family:inherit;font-size:11px;color:var(--ink-muted);transition:all .15s}
+.audit-reset:hover{background:var(--paper);color:#000}
+.audit-btn{width:100%;text-align:left;padding:9px 11px;margin-bottom:5px;border:1.5px solid var(--border);border-radius:8px;background:var(--panel);cursor:pointer;transition:all .15s;position:relative;font-family:inherit}
+.audit-btn:hover{border-color:#c0c0d8;background:#f4f3ef}
+.audit-btn.active{border-color:var(--accent);background:var(--accent-lt)}
+.audit-btn .ab-icon{font-size:14px;margin-right:5px}
+.audit-btn .ab-name{font-size:12px;font-weight:700;color:#000}
+.audit-btn .ab-desc{font-size:11px;color:var(--ink-muted);margin-top:3px;line-height:1.4}
+.audit-btn .ab-count{position:absolute;top:8px;right:10px;font-size:11px;font-weight:700;color:var(--accent)}
+.contact-line{padding:10px 12px;font-size:11px;color:var(--ink-muted);border-top:1px solid var(--border);margin-top:4px}
+.contact-line a{color:var(--accent);text-decoration:none}
+
+/* Who's At The Top */
+.toplist-dropdown{border-bottom:1px solid var(--border)}
+.toplist-toggle{width:100%;padding:12px 14px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;background:var(--panel);border:none;font-family:inherit;text-align:left;transition:background .1s}
+.toplist-toggle:hover{background:#faf9f6}
+.toplist-toggle.open{background:#f0fdf4}
+.tlt-label{font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#16a34a}
+.tlt-arrow{font-size:10px;color:var(--ink-muted);transition:transform .2s}
+.toplist-toggle.open .tlt-arrow{transform:rotate(180deg)}
+.toplist-body{display:none;padding:8px 12px 12px;background:#f9fafb;border-top:1px solid var(--border)}
+.toplist-body.open{display:block}
+.toplist-btn{width:100%;text-align:left;padding:8px 11px;margin-bottom:5px;border:1.5px solid var(--border);border-radius:8px;background:var(--panel);cursor:pointer;font-family:inherit;transition:all .15s}
+.toplist-btn:hover{border-color:#86efac;background:#f0fdf4}
+.toplist-btn.active{border-color:#16a34a;background:#f0fdf4}
+.toplist-btn .tlb-icon{font-size:14px;margin-right:5px}
+.toplist-btn .tlb-name{font-size:12px;font-weight:700;color:#000}
+.toplist-btn .tlb-desc{font-size:11px;color:var(--ink-muted);margin-top:2px}
+
+/* Map */
+#map{flex:1;position:relative}
+.map-btns{position:absolute;top:12px;right:12px;display:flex;flex-direction:column;gap:5px;z-index:10}
+.map-btn{width:34px;height:34px;background:var(--panel);border:1px solid var(--border);border-radius:7px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:15px;color:#000;box-shadow:0 1px 4px rgba(0,0,0,.1);transition:background .1s;user-select:none}
+.map-btn:hover{background:var(--paper)}
+.map-mode-label{position:absolute;top:12px;left:12px;background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:6px 12px;font-size:12px;font-weight:600;color:#000;box-shadow:0 1px 4px rgba(0,0,0,.08);display:none;z-index:10;max-width:60%}
+.map-mode-label.show{display:block}
+
+/* Popup */
+.maplibregl-popup-content{font-family:'Segoe UI',system-ui,sans-serif!important;padding:0!important;border-radius:12px!important;box-shadow:0 6px 30px rgba(0,0,0,.15)!important;border:1px solid var(--border)!important;overflow:hidden;width:310px;display:flex;flex-direction:column}
+.maplibregl-popup-close-button{font-size:18px;color:var(--ink-muted);padding:8px 12px;z-index:1;line-height:1;position:absolute;top:0;right:0}
+.popup-head{padding:12px 32px 10px 14px;background:var(--paper);border-bottom:1px solid var(--border);flex-shrink:0}
+.popup-employer{font-family:'DM Serif Display',serif;font-size:14px;line-height:1.3;color:#000}
+.popup-sector{font-size:10px;color:var(--ink-muted);text-transform:uppercase;letter-spacing:.5px;margin-top:3px}
+.popup-audit-flag{font-size:11px;color:var(--accent);font-weight:600;margin-top:4px;line-height:1.4}
+.popup-kpis{display:flex;border-bottom:1px solid var(--border);flex-shrink:0}
+.popup-kpi{flex:1;padding:9px 6px;text-align:center;border-right:1px solid var(--border)}
+.popup-kpi:last-child{border-right:none}
+.kpi-val{font-size:12px;font-weight:700;color:#000}
+.kpi-label{font-size:9px;color:var(--ink-muted);text-transform:uppercase;letter-spacing:.4px;margin-top:1px}
+.popup-scroll{flex:1;overflow-y:auto;max-height:400px;-webkit-overflow-scrolling:touch}
+.popup-scroll::-webkit-scrollbar{width:3px}
+.popup-scroll::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+.popup-list-title{padding:7px 12px 3px;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--ink-muted);position:sticky;top:0;background:var(--panel);border-bottom:1px solid #f4f2ee;z-index:1}
+.popup-list-title.bottom-title{background:#faf9f6;border-top:2px solid var(--border)}
+.popup-employee{display:flex;align-items:baseline;justify-content:space-between;padding:5px 12px;gap:6px;border-bottom:1px solid #f4f2ee}
+.popup-employee:last-child{border-bottom:none}
+.popup-employee.highlight{background:#fffbeb}
+.pe-rank{font-size:10px;color:var(--ink-muted);width:20px;flex-shrink:0;text-align:right}
+.pe-info{flex:1;min-width:0}
+.pe-name{font-size:12px;font-weight:600;color:#000;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pe-title{font-size:10px;color:var(--ink-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pe-salary{font-size:12px;font-weight:700;color:var(--accent);flex-shrink:0}
+.pe-salary.low{color:#3b82f6}
+
+/* Intro Modal */
+#intro-modal{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:99999;display:none;align-items:center;justify-content:center;padding:20px}
+#intro-box{background:#fff;border-radius:12px;max-width:460px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.3);overflow:hidden}
+#intro-head{background:#18181f;padding:22px 24px 14px;color:#fff}
+#intro-head h1{font-family:'DM Serif Display',serif;font-size:22px;margin-bottom:4px;color:#fff}
+#intro-head h1 span{color:#f87171}
+#intro-head p{font-size:11px;color:#9ca3af;text-transform:uppercase;letter-spacing:.5px}
+#intro-body{padding:18px 24px;font-size:13px;line-height:1.7;color:#111}
+#intro-body p{margin-bottom:10px}
+#intro-body p:last-child{margin-bottom:0}
+#intro-contact{padding:8px 24px;font-size:11px;color:#888;text-align:center}
+#intro-contact a{color:var(--accent);text-decoration:none}
+#intro-foot{padding:12px 24px 18px;border-top:1px solid #e4e2da;display:flex;flex-direction:column;align-items:center;gap:6px}
+#intro-go{background:var(--accent);color:#fff;border:none;border-radius:8px;padding:11px 26px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit}
+#intro-go:hover{background:#a93226}
+#intro-hint{font-size:11px;color:#aaa}
+
+/* Toplist Modal */
+#toplist-modal{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9000;display:none;align-items:center;justify-content:center;padding:20px}
+#toplist-modal.show{display:flex}
+#toplist-box{background:#fff;border-radius:12px;width:100%;max-width:420px;max-height:80vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.3);overflow:hidden}
+#toplist-modal-head{padding:14px 16px;background:#18181f;color:#fff;display:flex;justify-content:space-between;align-items:center;flex-shrink:0}
+#toplist-modal-title{font-family:'DM Serif Display',serif;font-size:16px;color:#fff}
+#toplist-modal-close{background:none;border:none;color:#9ca3af;font-size:22px;cursor:pointer;line-height:1;padding:0 4px}
+#toplist-modal-close:hover{color:#fff}
+#toplist-modal-body{overflow-y:auto;flex:1}
+#toplist-modal-body::-webkit-scrollbar{width:3px}
+#toplist-modal-body::-webkit-scrollbar-thumb{background:var(--border)}
+.tm-item{display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid #f4f2ee;cursor:pointer;transition:background .1s}
+.tm-item:last-child{border-bottom:none}
+.tm-item:hover{background:#f9f9f9}
+.tm-rank{font-size:16px;width:28px;flex-shrink:0;text-align:center}
+.tm-info{flex:1;min-width:0}
+.tm-name{font-size:13px;font-weight:700;color:#000}
+.tm-title{font-size:11px;color:var(--ink-muted);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tm-org{font-size:11px;color:#555;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tm-salary{font-size:13px;font-weight:700;color:var(--accent);flex-shrink:0}
+
+/* Mobile */
+.mobile-sheet{display:none;position:fixed;left:0;right:0;bottom:0;background:var(--panel);border-top:1px solid var(--border);border-radius:16px 16px 0 0;z-index:300;box-shadow:0 -4px 20px rgba(0,0,0,.1);transition:height .3s cubic-bezier(.4,0,.2,1);height:52px;overflow:hidden}
+.mobile-sheet.open{height:70vh}
+.sheet-handle-row{display:flex;align-items:center;justify-content:space-between;padding:0 16px;height:52px;cursor:pointer;border-bottom:1px solid var(--border);flex-shrink:0}
+.sheet-handle{width:36px;height:4px;background:var(--border);border-radius:2px;margin:0 auto}
+.sheet-title{font-size:13px;font-weight:600;color:#000}
+.sheet-body{height:calc(70vh - 52px);overflow-y:auto;-webkit-overflow-scrolling:touch}
+
+/* Loading */
+#loading{position:fixed;inset:0;background:var(--paper);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:1000;gap:14px}
+.loading-title{font-family:'DM Serif Display',serif;font-size:24px;color:#000}
+.loading-title em{color:var(--accent);font-style:normal}
+.loading-sub{font-size:12px;color:var(--ink-muted)}
+.spinner{width:28px;height:28px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* Inflation toggle */
+.infl-row{display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none}
+.infl-row input{display:none}
+.infl-switch{width:34px;height:19px;border-radius:10px;background:#d6d3cb;position:relative;flex-shrink:0;transition:background .2s}
+.infl-switch::after{content:"";position:absolute;top:2px;left:2px;width:15px;height:15px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.25);transition:left .2s}
+.infl-row input:checked + .infl-switch{background:var(--accent)}
+.infl-row input:checked + .infl-switch::after{left:17px}
+.infl-text{font-size:12px;font-weight:600;color:#000;line-height:1.3}
+.infl-note{font-size:11px;color:var(--ink-soft);line-height:1.5;margin-top:8px}
+.infl-note strong{color:var(--accent)}
+
+/* Popup trend */
+.popup-trend{padding:8px 12px 6px;border-bottom:1px solid var(--border);flex-shrink:0;background:#fff}
+.trend-label{font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--ink-muted);margin-bottom:4px}
+.trend-line{font-size:11px;color:var(--ink-soft);margin-top:3px;line-height:1.4}
+.trend-line strong{color:#000}
+.trend-up{color:var(--accent);font-weight:700}
+
+/* History list rows */
+.tm-note{padding:10px 16px;font-size:11px;color:var(--ink-soft);line-height:1.5;background:#fdfcfa;border-bottom:1px solid var(--border)}
+.tm-change{font-size:11px;color:var(--ink-muted);margin-top:1px}
+
+/* Badges */
+.bdgs{margin-top:3px;line-height:1.5}
+.bdg{display:inline-block;font-size:9px;font-weight:700;padding:1px 6px;border-radius:9px;margin:0 3px 2px 0;white-space:nowrap;background:#f1efe9;color:#1a1a1a;cursor:help}
+.bdg-1,.bdg-T{background:#fde8e6;color:#9f1d12}
+.bdg-U{background:#fef3c7;color:#92400e}
+.bdg-N{background:#dcfce7;color:#166534}
+.bdg-V{background:#dbeafe;color:#1e40af}
+.bdg-B{background:#f3e8ff;color:#6b21a8}
+.bdg-A{background:#cffafe;color:#155e75}
+.bdg-I{background:#eceae4;color:#333}
+.badge-key summary{font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--ink-muted);cursor:pointer;list-style:none}
+.badge-key summary::-webkit-details-marker{display:none}
+.badge-key summary::after{content:" +";}
+.badge-key[open] summary::after{content:" -";}
+.bk-row{display:flex;align-items:flex-start;gap:8px;margin-top:7px;font-size:11px;color:var(--ink-soft);line-height:1.4}
+.bk-row .bdg{flex-shrink:0;margin:0}
+.bk-note{font-size:10px;color:var(--ink-muted);margin-top:8px;line-height:1.4}
+
+@media(max-width:700px){
+  .sidebar{display:none}
+  .mobile-sheet{display:block}
+  .layout{bottom:52px}
+  .map-btns{bottom:64px;top:auto}
+  .header-stats{display:none}
+  .tagline{display:none}
+}
+</style>
+</head>
+<body>
+
+<div id="loading">
+  <div class="loading-title">Sunshine List <em>2025</em></div>
+  <div class="spinner"></div>
+  <div class="loading-sub">Loading Ontario public sector data...</div>
+</div>
+
+<div id="intro-modal" onclick="if(event.target===this)closeIntro()">
+  <div id="intro-box">
+    <div id="intro-head">
+      <h1>Ontario Sunshine List <span>2025</span></h1>
+      <p>Data current as of March 2026</p>
+    </div>
+    <div id="intro-body">
+      <p>Every year, the Ontario government is required by law to publish the names, positions, and salaries of public sector employees earning <strong>$100,000 or more</strong>. It's called the Sunshine List — the idea being that sunlight is the best disinfectant.</p>
+      <p>This map takes that public data and puts it where it belongs: <strong>in your hands</strong>. Every dot is a publicly-funded employer. Every name behind it is paid by Ontario taxpayers. Browse by sector, search for someone specific, or open <strong>Follow The Money</strong> to see what the numbers actually imply.</p>
+      <p>No private data was used. Everything here is already public.</p>
+    </div>
+    <div id="intro-contact">Contact: <a href="#" onclick="window.location='mai'+'lto:onsunshinelist'+'@gma'+'il.com';return false;">onsunshinelist at gmail.com</a></div>
+    <div id="intro-foot">
+      <button id="intro-go" onclick="closeIntro()">Explore the Map</button>
+      <span id="intro-hint">or tap anywhere outside to continue</span>
+    </div>
+  </div>
+</div>
+
+<div id="toplist-modal" onclick="if(event.target===this)closeToplistModal()">
+  <div id="toplist-box">
+    <div id="toplist-modal-head">
+      <div id="toplist-modal-title">Results</div>
+      <button id="toplist-modal-close" onclick="closeToplistModal()">x</button>
+    </div>
+    <div id="toplist-modal-body"></div>
+  </div>
+</div>
+
+<header>
+  <div class="header-left">
+    <div class="logo">Sunshine List <em>2025</em></div>
+    <div class="tagline">Every Ontario public employee earning $100,000+, paid by you &nbsp;· &nbsp;~404,000 people &nbsp;·&nbsp; 1,400+ locations &nbsp;·&nbsp; <a href="#" onclick="window.location='mai'+'lto:onsunshinelist'+'@gma'+'il.com';return false;">onsunshinelist at gmail.com</a></div>
+  </div>
+  <div class="header-stats">
+    <div class="hstat"><div class="hstat-value" id="h-employers">-</div><div class="hstat-label">Employers</div></div>
+    <div class="hstat"><div class="hstat-value" id="h-employees">-</div><div class="hstat-label">Employees</div></div>
+    <div class="hstat"><div class="hstat-value" id="h-avg">-</div><div class="hstat-label">Avg Salary</div></div>
+  </div>
+</header>
+
+<div class="layout">
+  <aside class="sidebar">
+    <div class="sidebar-scroll">
+
+      <div class="sb-section">
+        <div class="sb-label">Colour Scale</div>
+        <div class="legend-bar" id="legend-bar"></div>
+        <div class="legend-labels" id="legend-labels"><span>$100k</span><span>$150k</span><span>$200k</span><span>$250k+</span></div>
+      </div>
+
+      <div class="sb-section" id="inflation-section" style="display:none">
+        <div class="sb-label">Inflation Reality Check</div>
+        <label class="infl-row"><input type="checkbox" id="infl-toggle"><span class="infl-switch"></span><span class="infl-text">Index the $100k threshold to inflation</span></label>
+        <div class="infl-note" id="infl-note"></div>
+      </div>
+
+      <div class="sb-section">
+        <div class="sb-label">Sector</div>
+        <select id="sector-filter"><option value="all">All Sectors</option></select>
+      </div>
+
+      <div class="sb-section">
+        <div class="sb-label">Employer Search</div>
+        <input class="search-input" id="search-input" type="text" placeholder="Employer name...">
+      </div>
+
+      <div class="sb-section" style="padding-bottom:10px">
+        <div class="sb-label">Person Search</div>
+        <input class="search-input" id="person-search" type="text" placeholder="First or last name...">
+        <div class="person-results-wrap" id="person-results-wrap">
+          <div class="person-results-list" id="person-results-list"></div>
+          <div class="person-count" id="person-count"></div>
+        </div>
+      </div>
+
+      <div class="sb-section" id="badge-section" style="display:none">
+        <details class="badge-key"><summary>Badge Key</summary><div id="badge-key"></div></details>
+      </div>
+
+      <div class="audit-dropdown">
+        <button class="audit-dropdown-toggle" id="audit-toggle">
+          <div class="adt-left">
+            <span class="adt-label">Follow The Money</span>
+            <span class="adt-active" id="adt-active"></span>
+          </div>
+          <span class="adt-arrow">v</span>
+        </button>
+        <div class="audit-body" id="audit-body">
+          <div class="audit-callout" id="audit-callout"></div>
+          <button class="audit-reset" id="audit-reset">Clear / Reset View</button>
+          <div id="audit-buttons"></div>
+          <div class="contact-line">Contact: <a href="#" onclick="window.location='mai'+'lto:onsunshinelist'+'@gma'+'il.com';return false;">onsunshinelist at gmail.com</a></div>
+        </div>
+      </div>
+
+      <div class="toplist-dropdown">
+        <button class="toplist-toggle" id="toplist-toggle">
+          <span class="tlt-label">Who's At The Top</span>
+          <span class="tlt-arrow">v</span>
+        </button>
+        <div class="toplist-body" id="toplist-body">
+          <button class="toplist-btn" data-category="top50_overall"><span class="tlb-icon">👑</span><span class="tlb-name">Top 50 Overall</span><div class="tlb-desc">The 50 highest-paid public employees in Ontario</div></button>
+          <button class="toplist-btn hist-only" data-category="change_dollar"><span class="tlb-icon">📈</span><span class="tlb-name">Biggest Pay Jumps ($)</span><div class="tlb-desc">Largest increase in salary paid since last year</div></button>
+          <button class="toplist-btn hist-only" data-category="change_pct"><span class="tlb-icon">🚀</span><span class="tlb-name">Biggest Pay Jumps (%)</span><div class="tlb-desc">Largest percentage increase since last year</div></button>
+          <button class="toplist-btn hist-only" data-category="gain_span"><span class="tlb-icon">⏳</span><span class="tlb-name">Biggest Long-Term Gains</span><div class="tlb-desc">Largest increase from the first year on file to now</div></button>
+          <button class="toplist-btn" data-category="hospital_ceo"><span class="tlb-icon">🏥</span><span class="tlb-name">Hospital CEOs</span><div class="tlb-desc">Presidents and CEOs across Ontario hospitals</div></button>
+          <button class="toplist-btn" data-category="school_director"><span class="tlb-icon">🏫</span><span class="tlb-name">School Board Directors</span><div class="tlb-desc">Directors of Education across all school boards</div></button>
+          <button class="toplist-btn" data-category="university_president"><span class="tlb-icon">🎓</span><span class="tlb-name">University Presidents</span><div class="tlb-desc">Presidents and Vice-Chancellors of Ontario universities</div></button>
+          <button class="toplist-btn" data-category="college_president"><span class="tlb-icon">📚</span><span class="tlb-name">College Presidents</span><div class="tlb-desc">Presidents of Ontario colleges</div></button>
+          <button class="toplist-btn" data-category="deputy_minister"><span class="tlb-icon">🏛</span><span class="tlb-name">Deputy Ministers</span><div class="tlb-desc">Deputy Ministers across Ontario government ministries</div></button>
+          <button class="toplist-btn" data-category="police_chief"><span class="tlb-icon">👮</span><span class="tlb-name">Police Chiefs</span><div class="tlb-desc">Chiefs of Police across Ontario police services</div></button>
+        </div>
+      </div>
+
+    </div>
+  </aside>
+
+  <div id="map">
+    <div class="map-mode-label" id="map-mode-label"></div>
+    <div class="map-btns">
+      <button class="map-btn" id="btn-zi">+</button>
+      <button class="map-btn" id="btn-zo">-</button>
+      <button class="map-btn" id="btn-home">home</button>
+    </div>
+  </div>
+</div>
+
+<div class="mobile-sheet" id="mobile-sheet">
+  <div class="sheet-handle-row" id="sheet-toggle">
+    <div class="sheet-title">Follow The Money</div>
+    <div class="sheet-handle"></div>
+    <div></div>
+  </div>
+  <div class="sheet-body" id="sheet-body"></div>
+</div>
+
+<script>
+var DATA_FILE = "sunshine_map.json";
+var ONTARIO = {center:[-79.3,44.5],zoom:6};
+var allFeatures = [];
+var activeSector = "all";
+var searchQuery = "";
+var activeMode = null;
+var personQuery = "";
+var personMatches = [];
+var personSearchTimer = null;
+var activeToplist = null;
+var HISTORY = null;
+var inflationOn = false;
+var featureByEmployer = {};
+
+function closeIntro() {
+  document.getElementById("intro-modal").style.display = "none";
+}
+
+function closeToplistModal() {
+  document.getElementById("toplist-modal").classList.remove("show");
+  document.querySelectorAll(".toplist-btn").forEach(function(b){b.classList.remove("active");});
+  activeToplist = null;
+}
+
+var TOPLIST_CATEGORIES = {
+  change_dollar: {history:"change_dollar", label:function(h){return "Biggest Pay Jumps ($), "+h.previous_year+" to "+h.current_year;}},
+  change_pct:    {history:"change_pct",    label:function(h){return "Biggest Pay Jumps (%), "+h.previous_year+" to "+h.current_year;}},
+  gain_span:     {history:"gain_span",     label:function(h){return "Biggest Gains, "+h.first_year+" to "+h.current_year;}},
+  top50_overall: {
+    label: "Top 50 Highest-Paid Public Employees in Ontario",
+    isOverall: true
+  },
+  hospital_ceo: {
+    label: "Hospital CEOs / Presidents",
+    sectorMatch: function(f){var s=(f.properties.sector||"").toLowerCase();return s.includes("hospital")||s.includes("health");},
+    titleMatch: function(t){return /chief\s*executive\s*officer|^president\s*and\s*chief|^president\s*(&|\/|and)\s*(ceo|chief)/i.test(t)&&!/vice.?president|assistant|associate/i.test(t);}
+  },
+  school_director: {
+    label: "School Board Directors of Education",
+    sectorMatch: function(f){var s=(f.properties.sector||"").toLowerCase();return s.includes("school")||s.includes("district")||s.includes("conseil");},
+    titleMatch: function(t){return /director\s*(of|,)?\s*education/i.test(t)&&!/assistant\s*director/i.test(t);}
+  },
+  university_president: {
+    label: "University Presidents",
+    sectorMatch: function(f){var s=(f.properties.sector||"").toLowerCase();return s.includes("universit");},
+    titleMatch: function(t){return /^president($|\s*,|\s*and|\s*\/|\s*&)/i.test(t.trim())||/^president\s*and\s*(vice.?chancellor|ceo)/i.test(t.trim());}
+  },
+  college_president: {
+    label: "College Presidents",
+    sectorMatch: function(f){var s=(f.properties.sector||"").toLowerCase();return s.includes("college");},
+    titleMatch: function(t){return /^(president|pr[eé]sident[e]?)($|\s*\/|\s*,|\s*and|\s*&)/i.test(t.trim())&&!/vice.?president|assistant|past\s*president|director.*president|advisor.*president/i.test(t);}
+  },
+  deputy_minister: {
+    label: "Deputy Ministers",
+    sectorMatch: function(f){var s=(f.properties.sector||"").toLowerCase();return s.includes("government of ontario")||s.includes("ontario public service")||s.includes("crown");},
+    titleMatch: function(t){return /^deputy\s*minister\b/i.test(t.trim());}
+  },
+  police_chief: {
+    label: "Chiefs of Police",
+    sectorMatch: function(){return true;},
+    titleMatch: function(t){return /^chief\s*of\s*police$|^chief\s*of\s*police\s*[,\/]|commissioner,\s*ontario\s*provincial\s*police/i.test(t.trim());}
+  }
+};
+
+function growthOf(f){
+  if(!HISTORY)return null;
+  var h=HISTORY.employers[f.properties.employer];
+  if(!h)return null;
+  var c0=h.c[0],c1=h.c[h.c.length-1];
+  if(c0<10)return null;
+  return c1/c0-1;
+}
+
+var AUDITS = [
+  {id:"fastest_growing",icon:"📈",name:"Fastest Growing",needsHistory:true,desc:"Employers whose $100k+ headcount at least doubled since {first}. Part hiring, part pay creep, part inflation.",
+    filter:function(f){var g=growthOf(f);return g!==null&&g>=1;},
+    color:function(f){var g=growthOf(f);if(g>=4)return"#dc2626";if(g>=3)return"#f97316";if(g>=2)return"#f59e0b";return"#60a5fa";},
+    callout:function(features){
+      if(!features.length)return"No employers doubled their list headcount.";
+      var top=features.slice().sort(function(a,b){return growthOf(b)-growthOf(a);})[0];
+      var h=HISTORY.employers[top.properties.employer];
+      var msg="<strong>"+features.length+" employers</strong> at least doubled their $100k+ headcount since "+HISTORY.first_year+". Fastest: <strong>"+top.properties.employer+"</strong>, from "+h.c[0]+" to "+h.c[h.c.length-1]+" people.";
+      var inf=HISTORY.inflation;
+      if(inf&&inf.thresholds[HISTORY.first_year]&&inf.thresholds[HISTORY.current_year]){
+        var drift=inf.thresholds[HISTORY.current_year]-inf.thresholds[HISTORY.first_year];
+        msg+=" Note: inflation alone moved the real-value line by "+fmt(drift)+" over that span, so some growth is people drifting over an un-indexed $100k.";
+      }
+      return msg;
+    },
+    legendBar:"linear-gradient(to right,#60a5fa,#f59e0b,#f97316,#dc2626)",legendLabels:["2x","3x","4x","5x+"]},
+  {id:"fat_cat",icon:"🐱",name:"Fat Cat Index",desc:"Top earner makes 3x or more the org's average. One publicly-funded person eating the pie.",
+    filter:function(f){var t=JSON.parse(f.properties.top50||"[]");return t.length&&f.properties.avg_salary&&t[0].salary>=f.properties.avg_salary*3;},
+    color:function(){return"#dc2626";},
+    callout:function(features){var worst=features.slice().sort(function(a,b){var at=JSON.parse(a.properties.top50||"[]"),bt=JSON.parse(b.properties.top50||"[]");return(bt[0]?bt[0].salary/b.properties.avg_salary:0)-(at[0]?at[0].salary/a.properties.avg_salary:0);})[0];if(!worst)return"";var top=JSON.parse(worst.properties.top50||"[]")[0];var ratio=(top.salary/worst.properties.avg_salary).toFixed(1);return"<strong>"+features.length+" publicly-funded employers</strong> where the top earner makes 3x or more the org average. Worst: <strong>"+worst.properties.employer+"</strong> - "+top.first_name+" "+top.last_name+" takes <strong>"+fmt(top.salary)+"</strong>, "+ratio+"x what their average colleague earns.";},
+    legendBar:"linear-gradient(to right,#fca5a5,#f87171,#ef4444,#dc2626)",legendLabels:["3x","4x","5x","6x+"]},
+  {id:"top_heavy",icon:"👔",name:"Executive Excess",desc:"15%+ of staff carry Director, VP, Chief, or President titles. Publicly-funded org chart padding.",
+    filter:function(f){var t=JSON.parse(f.properties.top50||"[]");var n=t.filter(function(e){return /director|vice.?president|\bvp\b|chief|president|commissioner|superintendent/i.test(e.job_title);}).length;return f.properties.employee_count>=5&&t.length&&(n/t.length)>=0.15;},
+    color:function(){return"#7c3aed";},
+    callout:function(features){return"<strong>"+features.length+" employers</strong> where at least 15% of their $100k+ staff have executive titles. Every one of them paid by taxpayers.";},
+    legendBar:"linear-gradient(to right,#ddd6fe,#a78bfa,#7c3aed)",legendLabels:["15%","25%","40%","55%+"]},
+  {id:"outlier_salary",icon:"💰",name:"Premium Payroll",desc:"Avg salary $180k+. The very comfortable end of public service.",
+    filter:function(f){return f.properties.avg_salary>=180000;},
+    color:function(f){var s=f.properties.avg_salary;if(s>=250000)return"#dc2626";if(s>=220000)return"#f97316";if(s>=200000)return"#f59e0b";return"#60a5fa";},
+    callout:function(features){var total=features.reduce(function(s,f){return s+f.properties.employee_count;},0);var avg=features.reduce(function(s,f){return s+f.properties.avg_salary;},0)/features.length;return"<strong>"+features.length+" employers</strong> averaging $180k+. <strong>"+total.toLocaleString()+" publicly-paid people</strong>. Avg of averages: <strong>"+fmt(avg)+"</strong>.";},
+    legendBar:"linear-gradient(to right,#60a5fa,#f59e0b,#f97316,#dc2626)",legendLabels:["$180k","$200k","$220k","$250k+"]},
+  {id:"pay_gap",icon:"📐",name:"Internal Pay Gap",desc:"Biggest gap between top earner and org average. Steep hierarchy, all publicly funded.",
+    filter:function(f){return f.properties.max_salary&&f.properties.avg_salary&&(f.properties.max_salary-f.properties.avg_salary)>=150000;},
+    color:function(f){var g=f.properties.max_salary-f.properties.avg_salary;if(g>=400000)return"#dc2626";if(g>=300000)return"#f97316";if(g>=200000)return"#f59e0b";return"#93c5fd";},
+    callout:function(features){var worst=features.slice().sort(function(a,b){return(b.properties.max_salary-b.properties.avg_salary)-(a.properties.max_salary-a.properties.avg_salary);})[0];var gap=worst.properties.max_salary-worst.properties.avg_salary;return"<strong>"+features.length+" employers</strong> with a $150k+ spread between top earner and average. Steepest: <strong>"+worst.properties.employer+"</strong> - gap of <strong>"+fmt(gap)+"</strong>.";},
+    legendBar:"linear-gradient(to right,#93c5fd,#f59e0b,#f97316,#dc2626)",legendLabels:["$150k","$200k","$300k","$400k+"]},
+  {id:"lame_duck",icon:"🏖",name:"Lame Duck Watch",desc:"Acting or Interim titles but salary is $180k+. Placeholder titles, permanent paycheques.",
+    filter:function(f){var top=JSON.parse(f.properties.top50||"[]");return top.some(function(e){return /\b(acting|interim|temporary|temp)\b/i.test(e.job_title)&&e.salary>=180000;});},
+    color:function(){return"#0891b2";},
+    callout:function(features){var total=features.reduce(function(sum,f){var top=JSON.parse(f.properties.top50||"[]");return sum+top.filter(function(e){return /\b(acting|interim|temporary|temp)\b/i.test(e.job_title)&&e.salary>=180000;}).length;},0);return"<strong>"+features.length+" employers</strong> with staff earning $180k+ under Acting or Interim titles. <strong>"+total+" people</strong> in placeholder roles collecting executive pay.";},
+    legendBar:"linear-gradient(to right,#a5f3fc,#22d3ee,#0891b2)",legendLabels:["$180k","$220k","$260k","$300k+"]},
+  {id:"title_soup",icon:"📝",name:"Title Soup",desc:"85%+ unique job titles among top earners. Everyone's a Chief of Something.",
+    filter:function(f){var top=JSON.parse(f.properties.top50||"[]");if(top.length<10)return false;var unique=new Set(top.map(function(e){return e.job_title.toLowerCase().trim();})).size;return(unique/top.length)>=0.85;},
+    color:function(){return"#d97706";},
+    callout:function(features){var worst=features.slice().sort(function(a,b){var at=JSON.parse(a.properties.top50||"[]"),bt=JSON.parse(b.properties.top50||"[]");return(new Set(bt.map(function(e){return e.job_title.toLowerCase();})).size/bt.length)-(new Set(at.map(function(e){return e.job_title.toLowerCase();})).size/at.length);})[0];var top=JSON.parse(worst?worst.properties.top50||"[]":"[]");var unique=new Set(top.map(function(e){return e.job_title.toLowerCase();})).size;return"<strong>"+features.length+" employers</strong> where 85%+ of top-earning staff have completely unique job titles. Worst: <strong>"+(worst?worst.properties.employer:"")+"</strong> - "+unique+" different titles among "+top.length+" people.";},
+    legendBar:"linear-gradient(to right,#fde68a,#fbbf24,#d97706)",legendLabels:["85%","90%","95%","100%"]},
+  {id:"admin_frontline",icon:"🏥",name:"Admin vs. Frontline",desc:"Health orgs where management titles outnumber clinical titles in top earners. More suits than scrubs.",
+    filter:function(f){var s=(f.properties.sector||"").toLowerCase();if(!s.includes("hospital")&&!s.includes("health"))return false;var top=JSON.parse(f.properties.top50||"[]");if(top.length<5)return false;var clinical=/\b(physician|doctor|surgeon|nurse|therapist|pharmacist|dentist|radiolog|patholog|psychiatr|psycholog|anesthes|cardiolog|neurolog|oncolog|intensivist|hospitalist|midwife|paramedic|dietitian|audiolog|physiother|chiropract|optometrist)/i;var admin=/\b(director|manager|vp|vice.?president|chief|president|administrator|coordinator|officer|advisor|consultant|analyst)\b/i;return top.filter(function(e){return admin.test(e.job_title);}).length>top.filter(function(e){return clinical.test(e.job_title);}).length;},
+    color:function(){return"#be185d";},
+    callout:function(features){return"<strong>"+features.length+" health sector employers</strong> where admin titles outnumber clinical titles among top earners. More suits than scrubs.";},
+    legendBar:"linear-gradient(to right,#fbcfe8,#f472b6,#be185d)",legendLabels:["Admin>Clinical","","","Heavily admin"]},
+  {id:"benefits_hogs",icon:"💸",name:"Benefits Bonanza",desc:"Avg benefits $5,000+ on top of six-figure salaries. The perks nobody talks about.",
+    filter:function(f){var top=JSON.parse(f.properties.top50||"[]");var wb=top.filter(function(e){return e.benefits&&e.benefits>0&&e.benefits!==2025;});if(wb.length<5)return false;return(wb.reduce(function(s,e){return s+e.benefits;},0)/wb.length)>=5000;},
+    color:function(){return"#059669";},
+    callout:function(features){var best=features.slice().sort(function(a,b){var at=JSON.parse(a.properties.top50||"[]").filter(function(e){return e.benefits&&e.benefits>0&&e.benefits!==2025;});var bt=JSON.parse(b.properties.top50||"[]").filter(function(e){return e.benefits&&e.benefits>0&&e.benefits!==2025;});return(bt.length?bt.reduce(function(s,e){return s+e.benefits;},0)/bt.length:0)-(at.length?at.reduce(function(s,e){return s+e.benefits;},0)/at.length:0);})[0];var top=JSON.parse(best?best.properties.top50||"[]":"[]").filter(function(e){return e.benefits&&e.benefits>0&&e.benefits!==2025;});var avgBen=top.length?top.reduce(function(s,e){return s+e.benefits;},0)/top.length:0;return"<strong>"+features.length+" employers</strong> averaging $5k+ in benefits on top of six-figure salaries. Highest: <strong>"+(best?best.properties.employer:"")+"</strong> at <strong>"+fmt(avgBen)+"</strong> per person per year.";},
+    legendBar:"linear-gradient(to right,#a7f3d0,#34d399,#059669)",legendLabels:["$5k","$10k","$20k","$30k+"]},
+  {id:"bureaucracy",icon:"🔄",name:"Bureaucracy Score",desc:"Large headcount + high manager ratio + salary near the floor. Classic publicly-funded bloat.",
+    filter:function(f){var top=JSON.parse(f.properties.top50||"[]");if(f.properties.employee_count<100||top.length<10)return false;var n=top.filter(function(e){return /director|vice.?president|\bvp\b|chief|president|commissioner|superintendent|manager|coordinator/i.test(e.job_title);}).length;return(n/top.length)>=0.3&&(f.properties.avg_salary||0)<=135000;},
+    color:function(){return"#64748b";},
+    callout:function(features){var total=features.reduce(function(s,f){return s+f.properties.employee_count;},0);return"<strong>"+features.length+" large employers</strong> where 30%+ of visible staff are managers, yet avg salary stays near $100k. <strong>"+total.toLocaleString()+" people</strong> in orgs that have mastered managing without doing.";},
+    legendBar:"linear-gradient(to right,#cbd5e1,#94a3b8,#64748b)",legendLabels:["Mild","Moderate","Heavy","Maximum"]},
+  {id:"queens_park",icon:"📍",name:"Queen's Park Gravity",desc:"Ontario government ministries and crown agencies only. The provincial power map.",
+    filter:function(f){var s=(f.properties.sector||"").toLowerCase();return s.includes("government of ontario")||s.includes("crown")||s.includes("ontario public service");},
+    color:function(f){var s=(f.properties.sector||"").toLowerCase();return s.includes("crown")?"#f97316":"#1d4ed8";},
+    callout:function(features){var total=features.reduce(function(s,f){return s+f.properties.employee_count;},0);var avg=features.reduce(function(s,f){return s+f.properties.avg_salary;},0)/features.length;return"<strong>"+features.length+" provincial government bodies</strong> with <strong>"+total.toLocaleString()+" employees</strong> on the list. Avg: <strong>"+fmt(avg)+"</strong>. Blue = ministry. Orange = crown agency.";},
+    legendBar:"linear-gradient(to right,#93c5fd,#3b82f6,#1d4ed8,#f97316)",legendLabels:["Ministry","","","Crown"]},
+  {id:"credential_inflation",icon:"🎓",name:"Credential Inflation",desc:"5+ distinct Director title variants among $100k+ staff. When everyone's a director, nobody is.",
+    filter:function(f){var top=JSON.parse(f.properties.top50||"[]");var dirs=top.filter(function(e){return /\bdirector\b/i.test(e.job_title);});return new Set(dirs.map(function(e){return e.job_title.toLowerCase().trim();})).size>=5;},
+    color:function(){return"#9333ea";},
+    callout:function(features){var worst=features.slice().sort(function(a,b){var at=JSON.parse(a.properties.top50||"[]"),bt=JSON.parse(b.properties.top50||"[]");return new Set(bt.filter(function(e){return /\bdirector\b/i.test(e.job_title);}).map(function(e){return e.job_title.toLowerCase();})).size-new Set(at.filter(function(e){return /\bdirector\b/i.test(e.job_title);}).map(function(e){return e.job_title.toLowerCase();})).size;})[0];var top=JSON.parse(worst?worst.properties.top50||"[]":"[]");var dirs=new Set(top.filter(function(e){return /\bdirector\b/i.test(e.job_title);}).map(function(e){return e.job_title.toLowerCase();})).size;return"<strong>"+features.length+" employers</strong> with 5+ unique Director title variants. Worst: <strong>"+(worst?worst.properties.employer:"")+"</strong> with <strong>"+dirs+" distinct director titles</strong>.";},
+    legendBar:"linear-gradient(to right,#e9d5ff,#c084fc,#9333ea)",legendLabels:["5","8","12","15+"]}
+];
+
+var map = new maplibregl.Map({
+  container:"map",
+  style:"https://tiles.openfreemap.org/styles/positron",
+  center:ONTARIO.center,zoom:ONTARIO.zoom,maxZoom:17
+});
+var popup = new maplibregl.Popup({closeButton:true,maxWidth:"320px",offset:12});
+
+function initApp() {
+  var histReq = fetch("history.json").then(function(r){return r.ok?r.json():null;}).catch(function(){return null;});
+  fetch(DATA_FILE)
+    .then(function(r){if(!r.ok)throw new Error("HTTP "+r.status);return r.json();})
+    .then(function(geojson){return histReq.then(function(h){return [geojson,h];});})
+    .then(function(res){
+      var geojson=res[0];
+      HISTORY=res[1];
+      allFeatures = geojson.features||[];
+      allFeatures.forEach(function(f){featureByEmployer[f.properties.employer]=f;});
+      initHistoryUI();
+      initSectors();
+      initMapLayers();
+      buildAuditPanel();
+      renderMode(null);
+      document.getElementById("loading").remove();
+      document.getElementById("intro-modal").style.display = "flex";
+    })
+    .catch(function(err){
+      document.querySelector(".loading-sub").textContent = "Error: "+err.message;
+      document.querySelector(".spinner").style.display = "none";
+    });
+}
+
+map.on("load", initApp);
+
+function initSectors() {
+  var sectors = [];
+  var seen = {};
+  allFeatures.forEach(function(f){var s=f.properties.sector;if(s&&!seen[s]){seen[s]=true;sectors.push(s);}});
+  sectors.sort();
+  var sel = document.getElementById("sector-filter");
+  sectors.forEach(function(s){var o=document.createElement("option");o.value=s;o.textContent=s;sel.appendChild(o);});
+  sel.addEventListener("change",function(){activeSector=sel.value;renderMode(activeMode);});
+}
+
+function initMapLayers() {
+  map.addSource("employers",{type:"geojson",data:{type:"FeatureCollection",features:[]}});
+  map.addSource("person-highlight",{type:"geojson",data:{type:"FeatureCollection",features:[]}});
+  map.addLayer({id:"emp-halo",type:"circle",source:"employers",paint:{"circle-color":["get","_color"],"circle-radius":["interpolate",["linear"],["get","_size"],1,14,50,24,500,36,5000,50],"circle-opacity":0.1,"circle-blur":1}});
+  map.addLayer({id:"emp-dot",type:"circle",source:"employers",paint:{"circle-color":["get","_color"],"circle-radius":["interpolate",["linear"],["get","_size"],1,5,50,10,500,17,5000,26],"circle-opacity":0.85,"circle-stroke-width":1.5,"circle-stroke-color":"rgba(255,255,255,0.75)"}});
+  map.addLayer({id:"person-ring",type:"circle",source:"person-highlight",paint:{"circle-color":"transparent","circle-radius":["interpolate",["linear"],["get","employee_count"],1,10,50,16,500,24,5000,34],"circle-stroke-width":3,"circle-stroke-color":"#f59e0b","circle-opacity":1}});
+  map.on("click","emp-dot",function(e){showPopup(e.features[0]);});
+  map.on("mouseenter","emp-dot",function(){map.getCanvas().style.cursor="pointer";});
+  map.on("mouseleave","emp-dot",function(){map.getCanvas().style.cursor="";});
+}
+
+function baseColor(f){var s=f.properties.avg_salary;if(!s)return"#aaa";if(s>=260000)return"#dc2626";if(s>=220000)return"#f97316";if(s>=180000)return"#f59e0b";if(s>=140000)return"#60a5fa";return"#93c5fd";}
+
+function renderMode(modeId) {
+  activeMode = modeId;
+  var mode = null;
+  for(var i=0;i<AUDITS.length;i++){if(AUDITS[i].id===modeId){mode=AUDITS[i];break;}}
+  var features = allFeatures.filter(function(f){
+    if(activeSector!=="all"&&f.properties.sector!==activeSector)return false;
+    if(searchQuery&&f.properties.employer.toLowerCase().indexOf(searchQuery)<0)return false;
+    if(inflationOn&&adjOf(f)<1)return false;
+    return true;
+  });
+  if(mode&&mode.filter)features=features.filter(mode.filter);
+  var colored = features.map(function(f){
+    var c = mode?(typeof mode.color==="function"?mode.color(f):mode.color):baseColor(f);
+    var p = Object.assign({},f.properties);p._color=c;p._size=inflationOn?adjOf(f):f.properties.employee_count;
+    return {type:"Feature",geometry:f.geometry,properties:p};
+  });
+  map.getSource("employers").setData({type:"FeatureCollection",features:colored});
+  updateHeader(features);
+  var bar=document.getElementById("legend-bar"),labels=document.getElementById("legend-labels");
+  if(mode&&mode.legendBar){bar.style.background=mode.legendBar;labels.innerHTML=mode.legendLabels.map(function(l){return"<span>"+l+"</span>";}).join("");}
+  else{bar.style.background="linear-gradient(to right,#93c5fd,#60a5fa,#f59e0b,#f97316,#dc2626)";labels.innerHTML="<span>$100k</span><span>$150k</span><span>$200k</span><span>$250k+</span>";}
+  var callout=document.getElementById("audit-callout");
+  if(mode&&mode.callout){callout.innerHTML=mode.callout(features);callout.classList.add("show");}else callout.classList.remove("show");
+  var lbl=document.getElementById("map-mode-label");
+  var parts=[];
+  if(inflationOn){var t=HISTORY.inflation.thresholds[HISTORY.current_year];parts.push("Inflation-indexed threshold: "+fmt(t));}
+  if(mode)parts.push(mode.icon+" "+mode.name+" - "+features.length+" employers");
+  if(parts.length){lbl.textContent=parts.join("  ·  ");lbl.classList.add("show");}else lbl.classList.remove("show");
+  var adtActive=document.getElementById("adt-active");
+  if(adtActive)adtActive.textContent=mode?mode.name:"";
+  document.querySelectorAll(".audit-btn[data-id]").forEach(function(btn){
+    btn.classList.toggle("active",btn.dataset.id===modeId);
+    var c=btn.querySelector(".ab-count");
+    if(c)c.textContent=btn.dataset.id===modeId?features.length:"";
+  });
+}
+
+function buildAuditPanel() {
+  if(!HISTORY)AUDITS=AUDITS.filter(function(a){return !a.needsHistory;});
+  AUDITS.forEach(function(a){if(HISTORY)a.desc=a.desc.replace("{first}",HISTORY.first_year);});
+  var btns = AUDITS.map(function(a){
+    return '<button class="audit-btn" data-id="'+a.id+'"><span class="ab-icon">'+a.icon+'</span><span class="ab-name">'+a.name+'</span><span class="ab-count"></span><div class="ab-desc">'+a.desc+'</div></button>';
+  }).join("");
+  document.getElementById("audit-buttons").innerHTML = btns;
+
+  document.getElementById("sheet-body").innerHTML =
+    '<div style="padding:10px 14px 4px"><select id="sector-filter-mobile" style="width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:6px;font-family:inherit;font-size:13px;background:var(--paper);color:#000">'+
+    Array.from(document.getElementById("sector-filter").options).map(function(o){return'<option value="'+o.value+'">'+o.textContent+'</option>';}).join("")+
+    '</select></div>'+
+    '<div style="padding:6px 14px 4px"><input class="search-input" id="employer-search-mobile" type="text" placeholder="Employer name..." style="width:100%"></div>'+
+    '<div style="padding:6px 14px 4px"><input class="search-input" id="person-search-mobile" type="text" placeholder="Person search..." style="width:100%"></div>'+
+    (HISTORY&&HISTORY.badges?'<div style="padding:8px 14px 4px"><details class="badge-key"><summary>Badge Key</summary>'+badgeKeyHTML()+'</details></div>':'')+
+    '<div id="person-results-wrap-mobile" style="padding:0 14px 6px;display:none"><div id="person-results-list-mobile" style="border:1px solid var(--border);border-radius:6px;background:var(--panel);max-height:220px;overflow-y:auto"></div><div id="person-count-mobile" style="font-size:10px;color:var(--ink-muted);margin-top:4px;text-align:right;padding:0 2px"></div></div>'+
+    (HISTORY&&HISTORY.inflation?'<div style="padding:8px 14px 6px"><label class="infl-row"><input type="checkbox" id="infl-toggle-mobile"><span class="infl-switch"></span><span class="infl-text">Index the $100k threshold to inflation</span></label><div class="infl-note" id="infl-note-mobile"></div></div>':'')+
+    '<div style="padding:4px 12px 8px">'+btns+'</div>'+
+    '<div style="border-top:1px solid var(--border);padding:10px 14px 6px;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#16a34a">Who\'s At The Top</div>'+
+    '<div style="padding:0 12px 12px">'+
+    '<button class="toplist-btn" data-category="top50_overall"><span class="tlb-icon">👑</span><span class="tlb-name">Top 50 Overall</span></button>'+
+    (HISTORY?'<button class="toplist-btn" data-category="change_dollar"><span class="tlb-icon">📈</span><span class="tlb-name">Biggest Pay Jumps ($)</span></button>'+
+    '<button class="toplist-btn" data-category="change_pct"><span class="tlb-icon">🚀</span><span class="tlb-name">Biggest Pay Jumps (%)</span></button>'+
+    '<button class="toplist-btn" data-category="gain_span"><span class="tlb-icon">⏳</span><span class="tlb-name">Biggest Long-Term Gains</span></button>':'')+
+    '<button class="toplist-btn" data-category="hospital_ceo"><span class="tlb-icon">🏥</span><span class="tlb-name">Hospital CEOs</span></button>'+
+    '<button class="toplist-btn" data-category="school_director"><span class="tlb-icon">🏫</span><span class="tlb-name">School Board Directors</span></button>'+
+    '<button class="toplist-btn" data-category="university_president"><span class="tlb-icon">🎓</span><span class="tlb-name">University Presidents</span></button>'+
+    '<button class="toplist-btn" data-category="college_president"><span class="tlb-icon">📚</span><span class="tlb-name">College Presidents</span></button>'+
+    '<button class="toplist-btn" data-category="deputy_minister"><span class="tlb-icon">🏛</span><span class="tlb-name">Deputy Ministers</span></button>'+
+    '<button class="toplist-btn" data-category="police_chief"><span class="tlb-icon">👮</span><span class="tlb-name">Police Chiefs</span></button>'+
+    '</div>';
+
+  document.getElementById("sector-filter-mobile").addEventListener("change",function(e){activeSector=e.target.value;document.getElementById("sector-filter").value=e.target.value;renderMode(activeMode);});
+  document.getElementById("employer-search-mobile").addEventListener("input",function(e){searchQuery=e.target.value.toLowerCase().trim();document.getElementById("search-input").value=e.target.value;renderMode(activeMode);});
+  document.getElementById("person-search-mobile").addEventListener("input",function(e){personQuery=e.target.value.trim().toLowerCase();clearTimeout(personSearchTimer);if(personQuery.length<2){clearPersonSearch();return;}personSearchTimer=setTimeout(runPersonSearch,300);});
+
+  document.querySelectorAll(".audit-btn[data-id]").forEach(function(btn){
+    btn.addEventListener("click",function(){var id=btn.dataset.id;renderMode(activeMode===id?null:id);});
+  });
+  document.getElementById("audit-toggle").addEventListener("click",function(){
+    document.getElementById("audit-body").classList.toggle("open");
+    document.getElementById("audit-toggle").classList.toggle("open");
+  });
+  document.getElementById("audit-reset").addEventListener("click",function(){renderMode(null);});
+  ["infl-toggle","infl-toggle-mobile"].forEach(function(id){
+    var el=document.getElementById(id);
+    if(el)el.addEventListener("change",function(){setInflation(el.checked);});
+  });
+  var nm=document.getElementById("infl-note-mobile"),nd=document.getElementById("infl-note");
+  if(nm&&nd)nm.innerHTML=nd.innerHTML;
+  document.getElementById("toplist-toggle").addEventListener("click",function(){
+    document.getElementById("toplist-body").classList.toggle("open");
+    document.getElementById("toplist-toggle").classList.toggle("open");
+  });
+  document.querySelectorAll(".toplist-btn[data-category]").forEach(function(btn){
+    btn.addEventListener("click",function(){
+      var cat=btn.dataset.category;
+      if(activeToplist===cat){activeToplist=null;btn.classList.remove("active");closeToplistModal();return;}
+      document.querySelectorAll(".toplist-btn").forEach(function(b){b.classList.remove("active");});
+      btn.classList.add("active");activeToplist=cat;runToplist(cat);
+    });
+  });
+}
+
+function runToplist(catId) {
+  var cat = TOPLIST_CATEGORIES[catId];
+  if(!cat)return;
+  if(cat.history){runHistoryList(cat);return;}
+  var matches = [];
+  if(cat.isOverall) {
+    allFeatures.forEach(function(f){
+      var top50=JSON.parse(f.properties.top50||"[]");
+      top50.forEach(function(e){matches.push({first_name:e.first_name,last_name:e.last_name,job_title:e.job_title,salary:e.salary,b:e.b,employer:f.properties.employer,feature:f});});
+    });
+  } else {
+    allFeatures.filter(function(f){return cat.sectorMatch(f);}).forEach(function(f){
+      var top50=JSON.parse(f.properties.top50||"[]");
+      var bottom50=JSON.parse(f.properties.bottom50||"[]");
+      top50.concat(bottom50).forEach(function(e){
+        if(cat.titleMatch(e.job_title||""))matches.push({first_name:e.first_name,last_name:e.last_name,job_title:e.job_title,salary:e.salary,b:e.b,employer:f.properties.employer,feature:f});
+      });
+    });
+  }
+  var seen = new Map();
+  matches.forEach(function(m){var k=m.first_name+"|"+m.last_name+(cat.isOverall?"":"|"+m.employer);if(!seen.has(k)||seen.get(k).salary<m.salary)seen.set(k,m);});
+  var ranked = Array.from(seen.values()).sort(function(a,b){return(b.salary||0)-(a.salary||0);}).slice(0,cat.isOverall?50:20);
+  document.getElementById("toplist-modal-title").textContent = cat.label;
+  var body = document.getElementById("toplist-modal-body");
+  if(!ranked.length){
+    body.innerHTML='<div style="padding:24px;text-align:center;font-size:13px;color:var(--ink-muted)">No matches found.</div>';
+  } else {
+    body.innerHTML = ranked.map(function(m,i){
+      var rank=i===0?"🥇":i===1?"🥈":i===2?"🥉":"<span style='font-size:12px;font-weight:700;color:var(--ink-muted)'>"+(i+1)+"</span>";
+      return '<div class="tm-item" data-idx="'+i+'"><span class="tm-rank">'+rank+'</span><div class="tm-info"><div class="tm-name">'+m.first_name+" "+m.last_name+'</div><div class="tm-title">'+trunc(m.job_title||"",45)+'</div><div class="tm-org">'+trunc(m.employer,45)+'</div>'+badgesHTML(m.b)+'</div><span class="tm-salary">'+fmt(m.salary)+'</span></div>';
+    }).join("");
+    body.querySelectorAll(".tm-item").forEach(function(el,i){
+      el.addEventListener("click",function(){
+        var m=ranked[i];closeToplistModal();
+        if(m.feature){map.flyTo({center:m.feature.geometry.coordinates,zoom:Math.max(map.getZoom(),12)});setTimeout(function(){showPopup(m.feature,m.first_name+" "+m.last_name);},400);var sheet=document.getElementById("mobile-sheet");if(sheet)sheet.classList.remove("open");}
+      });
+    });
+  }
+  document.getElementById("toplist-modal").classList.add("show");
+}
+
+function runHistoryList(cat) {
+  var body=document.getElementById("toplist-modal-body");
+  if(!HISTORY){
+    document.getElementById("toplist-modal-title").textContent="History not loaded";
+    body.innerHTML='<div style="padding:24px;text-align:center;font-size:13px;color:var(--ink-muted)">history.json is missing. Run build_history.py.</div>';
+    document.getElementById("toplist-modal").classList.add("show");return;
+  }
+  var rows=HISTORY.leaders[cat.history]||[];
+  var isPct=cat.history==="change_pct";
+  document.getElementById("toplist-modal-title").textContent=cat.label(HISTORY);
+  var note='<div class="tm-note">Salary <em>paid</em>, not base salary. Many 2023–2024 figures include retroactive pay after Bill 124 was struck down, so some jumps are back pay, not raises. People are matched by name and employer; anyone who changed employers or shares a name with a co-worker is left out.</div>';
+  body.innerHTML=note+rows.map(function(m,i){
+    var rank=i===0?"🥇":i===1?"🥈":i===2?"🥉":"<span style='font-size:12px;font-weight:700;color:var(--ink-muted)'>"+(i+1)+"</span>";
+    var big=isPct?"+"+m.pc.toLocaleString("en-CA")+"%":"+"+fmt(m.d);
+    return '<div class="tm-item" data-idx="'+i+'"><span class="tm-rank">'+rank+'</span><div class="tm-info"><div class="tm-name">'+m.fn+" "+m.ln+'</div><div class="tm-title">'+trunc(m.t||"",45)+'</div><div class="tm-org">'+trunc(m.e,45)+'</div><div class="tm-change">'+fmt(m.p)+" to "+fmt(m.s)+'</div></div><span class="tm-salary">'+big+'</span></div>';
+  }).join("");
+  body.querySelectorAll(".tm-item").forEach(function(el){
+    el.addEventListener("click",function(){
+      var m=rows[+el.dataset.idx];var f=featureByEmployer[m.e];closeToplistModal();
+      if(f){map.flyTo({center:f.geometry.coordinates,zoom:Math.max(map.getZoom(),12)});setTimeout(function(){showPopup(f,m.fn+" "+m.ln);},400);var sheet=document.getElementById("mobile-sheet");if(sheet)sheet.classList.remove("open");}
+    });
+  });
+  document.getElementById("toplist-modal").classList.add("show");
+}
+
+function adjOf(f){
+  var h=HISTORY&&HISTORY.employers[f.properties.employer];
+  return h&&h.adj?h.adj:0;
+}
+
+function badgeDefs(){
+  var H=HISTORY||{},bd=H.badges||{},inf=H.inflation,cy=H.current_year;
+  var thr=inf&&inf.thresholds[cy];
+  return {
+    "1":{l:function(){return "👑 #1 here";},d:"Highest paid person at this employer"},
+    "T":{l:function(){return "🔝 Top 1%";},d:"Paid more than 99% of everyone on the list"+(bd.top1_cut?" ("+fmt(bd.top1_cut)+"+)":"")},
+    "I":{l:function(){return "💵 Beats inflation";},d:"Still on the list if the $100k threshold kept up with inflation"+(thr?" ("+fmt(thr)+" today)":"")},
+    "U":{l:function(n){return "📈 +"+n+"%";},d:"Salary paid up "+(bd.jump_pct||20)+"%+ since "+(H.previous_year||"last year")+". Can include Bill 124 back pay"},
+    "N":{l:function(){return "🆕 New";},d:"Not on last year's list at this employer"},
+    "V":{l:function(){return "🏛 Since "+(H.first_year||"");},d:"On every list since "+(H.first_year||"the first year")+" at this employer"},
+    "B":{l:function(n){return "🎁 $"+n+"k perks";},d:"$"+((bd.perks_min||10000)/1000)+"k+ in taxable benefits on top of salary"},
+    "A":{l:function(){return "🏖 Interim";},d:"Acting or interim title, paid "+fmt(bd.interim_min||180000)+"+"}
+  };
+}
+var BADGE_DEFS=null;
+function badgesHTML(b){
+  if(!b||!HISTORY)return"";
+  if(!BADGE_DEFS)BADGE_DEFS=badgeDefs();
+  var out=b.split(",").map(function(code){
+    var k=code.charAt(0),n=code.slice(1),d=BADGE_DEFS[k];
+    if(!d)return"";
+    return '<span class="bdg bdg-'+k+'" title="'+d.d+'">'+d.l(n)+'</span>';
+  }).join("");
+  return out?'<div class="bdgs">'+out+'</div>':"";
+}
+function badgeKeyHTML(){
+  if(!BADGE_DEFS)BADGE_DEFS=badgeDefs();
+  var counts=(HISTORY.badges&&HISTORY.badges.counts)||{};
+  var sample={"U":"25","B":"12"};
+  return "1TIUNVBA".split("").map(function(k){
+    var d=BADGE_DEFS[k];
+    return '<div class="bk-row"><span class="bdg bdg-'+k+'">'+d.l(sample[k]||"")+'</span><span>'+d.d+(counts[k]?" <strong>("+counts[k].toLocaleString()+")</strong>":"")+'</span></div>';
+  }).join("")+'<div class="bk-note">People are matched across years by name and employer. Anyone sharing a name with a co-worker gets no badges.</div>';
+}
+
+function initHistoryUI(){
+  if(!HISTORY){document.querySelectorAll(".hist-only").forEach(function(b){b.remove();});return;}
+  if(HISTORY.badges){document.getElementById("badge-key").innerHTML=badgeKeyHTML();document.getElementById("badge-section").style.display="block";}
+  var inf=HISTORY.inflation,cy=HISTORY.current_year;
+  if(!inf||!inf.thresholds[cy])return;
+  var t=inf.thresholds[cy],tot=HISTORY.totals[cy];
+  var pct=Math.round(tot.above_adj/tot.count*100);
+  document.getElementById("infl-note").innerHTML="The $100k threshold was set in "+inf.base_year+" and never adjusted. In "+inf.base_year+" dollars it is <strong>"+fmt(t)+"</strong> today. Only <strong>"+tot.above_adj.toLocaleString()+" of "+tot.count.toLocaleString()+" ("+pct+"%)</strong> people on the "+cy+" list clear that bar.";
+  document.getElementById("inflation-section").style.display="block";
+}
+
+function setInflation(on){
+  inflationOn=on;
+  ["infl-toggle","infl-toggle-mobile"].forEach(function(id){var el=document.getElementById(id);if(el)el.checked=on;});
+  popup.remove();
+  renderMode(activeMode);
+}
+
+function trendHTML(p){
+  var h=HISTORY&&HISTORY.employers[p.employer];
+  if(!h)return"";
+  var ys=HISTORY.years,n=ys.length,max=Math.max.apply(null,h.c)||1;
+  var W=286,H=34,gap=4,bw=(W-gap*(n-1))/n,svg="";
+  h.c.forEach(function(v,i){
+    var bh=v?Math.max(2,Math.round(v/max*H)):0,x=i*(bw+gap);
+    svg+='<rect x="'+x.toFixed(1)+'" y="'+(H-bh)+'" width="'+bw.toFixed(1)+'" height="'+bh+'" rx="2" fill="'+(i===n-1?"#c0392b":"#d6d3cb")+'"><title>'+ys[i]+": "+v+' on list</title></rect>';
+    svg+='<text x="'+(x+bw/2).toFixed(1)+'" y="'+(H+10)+'" text-anchor="middle" font-size="8" fill="#555">'+String(ys[i]).slice(2)+'</text>';
+  });
+  var i0=-1;for(var i=0;i<n;i++){if(h.c[i]>0){i0=i;break;}}
+  var line="";
+  if(i0>=0&&i0<n-1){
+    var c0=h.c[i0],c1=h.c[n-1],g=Math.round((c1/c0-1)*100);
+    line='<div class="trend-line">On list: <strong>'+c0+'</strong> in '+ys[i0]+' to <strong>'+c1+'</strong> in '+ys[n-1]+' <span class="trend-up">('+(g>=0?"+":"")+g+'%)</span>';
+    if(h.a[i0]&&h.a[n-1])line+=' · Avg '+fmt(h.a[i0])+' to '+fmt(h.a[n-1]);
+    line+='</div>';
+  }
+  if(h.n)line+='<div class="trend-line"><strong>'+h.n+'</strong> new to the list at this employer since '+HISTORY.previous_year+'</div>';
+  var inf=HISTORY.inflation;
+  if(inf&&inf.thresholds[HISTORY.current_year]&&h.adj!==undefined){
+    line+='<div class="trend-line"><strong>'+h.adj+' of '+p.employee_count+'</strong> earn above '+fmt(inf.thresholds[HISTORY.current_year])+' ($100k in '+inf.base_year+' dollars)</div>';
+  }
+  return '<div class="popup-trend"><div class="trend-label">'+ys[0]+'–'+ys[n-1]+' trend</div><svg width="'+W+'" height="'+(H+12)+'" viewBox="0 0 '+W+' '+(H+12)+'">'+svg+'</svg>'+line+'</div>';
+}
+
+document.getElementById("person-search").addEventListener("input",function(e){
+  personQuery=e.target.value.trim().toLowerCase();
+  clearTimeout(personSearchTimer);
+  if(personQuery.length<2){clearPersonSearch();return;}
+  personSearchTimer=setTimeout(runPersonSearch,300);
+});
+
+var searchCache={};
+function normName(s){return (s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z ]+/g," ").replace(/\s+/g," ").trim();}
+
+function loadSearchChunk(key){
+  if(searchCache[key])return Promise.resolve(searchCache[key]);
+  return fetch("search/"+key+".json")
+    .then(function(r){return r.ok?r.json():{e:[],p:[]};})
+    .then(function(d){d.n=d.p.map(function(r){return normName(r[0]+" "+r[1]);});searchCache[key]=d;return d;});
+}
+
+function runPersonSearch() {
+  var wrap=document.getElementById("person-results-wrap");
+  var list=document.getElementById("person-results-list");
+  wrap.style.display="block";
+  var q=normName(personQuery);
+  var toks=q.split(" ").filter(function(t){return t.length>=2;});
+  if(!toks.length){list.innerHTML='<div style="padding:10px 12px;font-size:12px;color:var(--ink-muted)">Type at least 2 letters.</div>';return;}
+  var asked=personQuery;
+  list.innerHTML='<div style="padding:10px 12px;font-size:12px;color:var(--ink-muted)">Searching...</div>';
+  loadSearchChunk(toks[0].slice(0,2))
+    .then(function(d){
+      if(asked!==personQuery)return;
+      var hits=[];
+      for(var i=0;i<d.p.length;i++){if(d.n[i].indexOf(q)>=0)hits.push(d.p[i]);}
+      hits.sort(function(a,b){return(b[4]||0)-(a[4]||0);});
+      personMatches=hits.map(function(r){var e=d.e[r[3]];var feature=featureByEmployer[e]||null;return{first_name:r[0],last_name:r[1],job_title:r[2],employer:e,salary:r[4],b:r[5],coords:feature?feature.geometry.coordinates:null,feature:feature};});
+      renderPersonResults();highlightPersonDots();
+    })
+    .catch(function(){list.innerHTML='<div style="padding:10px 12px;font-size:12px;color:var(--accent)">Search unavailable. Run build_search_index.py.</div>';});
+}
+
+function renderPersonResults() {
+  var items=personMatches.slice(0,50);
+  var noResults='<div style="padding:10px 12px;font-size:12px;color:var(--ink-muted)">No results found.</div>';
+  var rowsHTML=items.map(function(m,i){return'<div class="person-hit" data-idx="'+i+'"><div class="ph-name">'+hl(m.first_name+" "+m.last_name,personQuery)+'</div><div class="ph-meta">'+trunc(m.job_title,34)+" · "+trunc(m.employer,28)+'</div><div class="ph-salary">'+fmt(m.salary)+'</div>'+badgesHTML(m.b)+'</div>';}).join("");
+  var countText=personMatches.length>50?"Showing 50 of "+personMatches.length:personMatches.length+" result"+(personMatches.length!==1?"s":"");
+  function wireClicks(listEl){
+    listEl.querySelectorAll(".person-hit").forEach(function(el){
+      el.addEventListener("click",function(){
+        var m=personMatches[+el.dataset.idx];
+        listEl.querySelectorAll(".person-hit.active").forEach(function(x){x.classList.remove("active");});
+        el.classList.add("active");
+        if(m.coords)map.flyTo({center:m.coords,zoom:Math.max(map.getZoom(),13)});
+        if(m.feature)showPopup(m.feature,m.first_name+" "+m.last_name);
+      });
+    });
+  }
+  var wrap=document.getElementById("person-results-wrap"),list=document.getElementById("person-results-list"),count=document.getElementById("person-count");
+  if(wrap){wrap.style.display="block";list.innerHTML=items.length?rowsHTML:noResults;if(count)count.textContent=countText;wireClicks(list);}
+  var wrapM=document.getElementById("person-results-wrap-mobile"),listM=document.getElementById("person-results-list-mobile"),countM=document.getElementById("person-count-mobile");
+  if(wrapM){wrapM.style.display="block";listM.innerHTML=items.length?rowsHTML:noResults;if(countM)countM.textContent=countText;wireClicks(listM);}
+}
+
+function highlightPersonDots(){var names=new Set(personMatches.map(function(m){return m.employer;}));map.getSource("person-highlight").setData({type:"FeatureCollection",features:allFeatures.filter(function(f){return names.has(f.properties.employer);})});}
+function clearPersonSearch(){personMatches=[];var w=document.getElementById("person-results-wrap"),wm=document.getElementById("person-results-wrap-mobile");if(w)w.style.display="none";if(wm)wm.style.display="none";var l=document.getElementById("person-results-list"),lm=document.getElementById("person-results-list-mobile");if(l)l.innerHTML="";if(lm)lm.innerHTML="";var c=document.getElementById("person-count"),cm=document.getElementById("person-count-mobile");if(c)c.textContent="";if(cm)cm.textContent="";map.getSource("person-highlight").setData({type:"FeatureCollection",features:[]});}
+
+function showPopup(f,highlightName){
+  var p=f.properties;
+  var top50=JSON.parse(p.top50||"[]");
+  var bottom50=JSON.parse(p.bottom50||"[]");
+  var hlName=(highlightName||"").toLowerCase();
+  var auditFlag="";
+  if(activeMode==="fat_cat"&&top50.length&&p.avg_salary){var ratio=(top50[0].salary/p.avg_salary).toFixed(1);auditFlag='<div class="popup-audit-flag">Top earner is '+ratio+'x the org average</div>';}
+  else if(activeMode==="pay_gap"){auditFlag='<div class="popup-audit-flag">Internal gap: '+fmt(p.max_salary-p.avg_salary)+'</div>';}
+  else if(activeMode==="lame_duck"){var lame=top50.filter(function(e){return /\b(acting|interim|temporary|temp)\b/i.test(e.job_title)&&e.salary>=180000;});auditFlag='<div class="popup-audit-flag">'+lame.length+' interim/acting title'+(lame.length!==1?"s":"")+" earning $180k+</div>";}
+  if(hlName){auditFlag='<div class="popup-audit-flag">Showing match for "'+highlightName+'"</div>';}
+  function makeRow(e,i,isBottom){
+    var isMatch=hlName&&(e.first_name+" "+e.last_name).toLowerCase().indexOf(hlName)>=0;
+    var isLame=activeMode==="lame_duck"&&/\b(acting|interim|temporary|temp)\b/i.test(e.job_title)&&e.salary>=180000;
+    return'<div class="popup-employee'+(isMatch?" highlight":"")+'"><span class="pe-rank" style="'+(isBottom?"color:#3b82f6":"")+'">'+( i+1)+'</span><div class="pe-info"><div class="pe-name">'+(isMatch?hl(e.first_name+" "+e.last_name,hlName):e.first_name+" "+e.last_name)+(isLame?' <span style="font-size:9px;background:#fef3c7;color:#92400e;padding:1px 4px;border-radius:3px">INTERIM</span>':"")+'</div><div class="pe-title">'+trunc(e.job_title||"",36)+'</div>'+badgesHTML(e.b)+'</div><span class="pe-salary'+(isBottom?" low":"")+'">'+fmt(e.salary)+'</span></div>';
+  }
+  var topRows=top50.map(function(e,i){return makeRow(e,i,false);}).join("");
+  var bottomSection=bottom50.length?'<div class="popup-list-title bottom-title">Bottom 50 - Lowest Paid (still $100k+)</div>'+bottom50.map(function(e,i){return makeRow(e,p.employee_count-bottom50.length+i,true);}).join(""):"";
+  var point=map.project(f.geometry.coordinates);
+  popup.options.anchor=point.y>map.getContainer().clientHeight*0.55?"bottom":"top";
+  popup.setLngLat(f.geometry.coordinates).setHTML(
+    '<div class="popup-head"><div class="popup-employer">'+p.employer+'</div><div class="popup-sector">'+p.sector+'</div>'+auditFlag+'</div>'+
+    '<div class="popup-kpis"><div class="popup-kpi"><div class="kpi-val">'+p.employee_count+'</div><div class="kpi-label">On List</div></div><div class="popup-kpi"><div class="kpi-val">'+fmt(p.avg_salary)+'</div><div class="kpi-label">Avg</div></div><div class="popup-kpi"><div class="kpi-val">'+fmt(p.max_salary)+'</div><div class="kpi-label">Top</div></div><div class="popup-kpi"><div class="kpi-val">'+fmt(p.min_salary)+'</div><div class="kpi-label">Floor</div></div></div>'+
+    trendHTML(p)+
+    '<div class="popup-scroll"><div class="popup-list-title">Top 50 Earners'+(top50.length<50?" (showing all "+top50.length+")":"")+'</div>'+topRows+bottomSection+'</div>'
+  ).addTo(map);
+  if(hlName){setTimeout(function(){var scroll=document.querySelector(".maplibregl-popup-content .popup-scroll");var match=document.querySelector(".maplibregl-popup-content .popup-employee.highlight");if(scroll&&match)scroll.scrollTop=match.offsetTop-40;},100);}
+}
+
+function updateHeader(features){
+  var total=features.reduce(function(s,f){return s+(inflationOn?adjOf(f):(f.properties.employee_count||0));},0);
+  var salaries=features.map(function(f){return f.properties.avg_salary;}).filter(Boolean);
+  var avg=salaries.length?salaries.reduce(function(a,b){return a+b;},0)/salaries.length:0;
+  document.getElementById("h-employers").textContent=features.length.toLocaleString();
+  document.getElementById("h-employees").textContent=total.toLocaleString();
+  document.getElementById("h-avg").textContent="$"+Math.round(avg/1000)+"k";
+}
+
+document.getElementById("btn-zi").addEventListener("click",function(){map.zoomIn();});
+document.getElementById("btn-zo").addEventListener("click",function(){map.zoomOut();});
+document.getElementById("btn-home").addEventListener("click",function(){map.flyTo(ONTARIO);});
+document.getElementById("search-input").addEventListener("input",function(e){searchQuery=e.target.value.toLowerCase().trim();renderMode(activeMode);});
+document.getElementById("sheet-toggle").addEventListener("click",function(){document.getElementById("mobile-sheet").classList.toggle("open");});
+
+function fmt(n){if(!n&&n!==0)return"-";return"$"+Math.round(n).toLocaleString("en-CA");}
+function trunc(s,n){if(!s)return"";return s.length>n?s.slice(0,n)+"...":s;}
+function hl(text,query){var idx=text.toLowerCase().indexOf(query);if(idx===-1)return text;return text.slice(0,idx)+'<strong style="color:var(--accent)">'+text.slice(idx,idx+query.length)+"</strong>"+text.slice(idx+query.length);}
+</script>
+</body>
+</html>
